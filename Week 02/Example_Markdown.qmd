@@ -1,0 +1,26 @@
+--- 
+title: "Week 2 test code"
+author: "Sam Cynamon"
+format: html
+---
+ 
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document __will__ be generated that _includes_ both content and the output of embedded code. You *can* embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this 
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).

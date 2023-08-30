@@ -1,0 +1,49 @@
+---
+title: "Untitled"
+format: html
+---
+
+We will install `tidyverse` packages using the following commands in the **console**.
+
+`install.packages("tidyverse")`
+
+Load the package 
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+#package: ggplot: mpg, library(ggplot2)
+print(mpg)
+head(mpg)
+tail(mpg)
+head(mpg, n=8)
+slice(mpg,10:20)
+dim(mpg) #defines the ddimensions columns,rows  or nrow(), ncol()
+class(mpg) #tells us its a tibble data.frame
+colnames(mpg) #list of the column names
+```
+##Subsetting Columns Using select() function
+```{r}
+select(mpg, model, year)
+select(mpg, starts_with("c")) #using this to select the column names that start with c
+select(mpg, ends_with("l"))
+select(mpg, contains("e"))
+```
+##Subsetting rows qith filters
+```{r}
+filter(mpg,year==2008)
+filter(mpg, (year==2008 & cyl>=6, model))
+```
+
+Import a file
+```{r}
+dt = readr::read_csv("Data/svcckww1jskrstnz_csv.zip")
+```
+
+```{r}
+select(dt, 1:7)
+```
+
