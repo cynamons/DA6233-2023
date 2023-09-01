@@ -10,12 +10,14 @@ We will install `tidyverse` packages using the following commands in the **conso
 Load the package 
 
 ```{r}
+setwd('"C:/Users/samuel.cynamon/OneDrive - LinQuest Corporation/Documents/MSDA/2023/DA6233/DA6233-2023"')
 library(tidyverse)
 ```
 
 
 ```{r}
 #package: ggplot: mpg, library(ggplot2)
+library(ggplot2)
 print(mpg)
 head(mpg)
 tail(mpg)
@@ -35,12 +37,13 @@ select(mpg, contains("e"))
 ##Subsetting rows qith filters
 ```{r}
 filter(mpg,year==2008)
-filter(mpg, (year==2008 & cyl>=6, model))
+filter(mpg, (year==2008 & cyl>=6 | model == "a4"))
 ```
 
 Import a file
 ```{r}
-dt = readr::read_csv("Data/svcckww1jskrstnz_csv.zip")
+library(readr)
+dt = readr::read_csv("Data/svcckww1jskrstnz.csv")
 ```
 
 ```{r}
