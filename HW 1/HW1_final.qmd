@@ -1,0 +1,248 @@
+---
+title: "Homework 1"
+author: "Samuel Cynamon and yjj265"
+format: html
+embed-resources: TRUE
+toc: TRUE
+toc-location: left
+---
+
+```{r setup, message=FALSE}
+library(tidyverse)
+library(here)
+```
+
+This homework uses `tech_stocks_csv.zip` which we used in the week 3 class. 
+
+Read `tech_stocks_csv.zip` into your R session using `read_csv()` function from `readr` package. Store the resulting object in `d1`.
+
+```{r, message=FALSE}
+d1 = read_csv(here::here("Data","tech_stocks_csv.zip"))
+```
+
+
+<p style="border:3px; border-style:solid; border-color:#b50000; padding: 1em;">This homework consists of 8 questions. Q1 carries 1 point. Q2 through Q8 carry two points each. We use `d2` as the initial input. Your objective is to reproduce the output shown in the PDF file for Q1 through Q8. </p>
+
+
+# Q1 
+
+Print a data frame with the medians of `at`, `emp`, and `xrd`. 
+
+`at` is Total assets (USD million)
+`emp` is Number of employees (In thousands)
+`xrd` is R&D expenses (USD million)
+
+```{r q-1}
+summarize(d1,
+  across(
+    c(at, emp, xrd), \(x) median(x, na.rm=TRUE)
+  )
+)
+```
+
+It said to print a data.frame but the example answer was a tibble, also unsure if we were not allowed to use `across()`, since it didn't specify a specific way or function it wanted us to calculate the median. I did the simpler way of individual equations without `across() `in Q5 if its a matter of showing proficiency.
+
+# Q2
+
+Print a data frame with the means of `sale`, `oibdp`, and `xrd` for Apple, Meta, and Tesla. For this, you will need to follow these steps:
+
+1. Filter only the observations pertaining to Apple, Meta, and Tesla
+2. Group by `conm`
+3. Summarize `sale`, `oibdp`, and `xrd` to get their means
+4. Output it as a data frame by using `as.data.frame()` function.
+
+In Step 3, you may **optionally** use `across()` inside `summarize()`. This function will save you writing more code. Read more about it here: https://dplyr.tidyverse.org/reference/across.html
+
+```{r q-2}
+d1 %>% 
+  select(conm, sale, oibdp, xrd) %>% 
+  group_by(conm) %>%
+  filter(conm %in% c("APPLE INC", "META PLATFORMS INC", "TESLA INC")) %>% 
+  summarize(
+    across(
+      c(sale, oibdp, xrd)
+      , \(x) mean(x, na.rm = TRUE)
+    )
+  ) %>% 
+  as.data.frame()
+```
+
+# Q3
+
+Round all the numeric variables in the above data frame to 1 decimal place. Output as a data frame using `as.data.frame()` function.
+
+For rounding, you will have to use `mutate`, `across`, and `where` functions from `dplyr` package. Check https://www.tidyverse.org/blog/2020/04/dplyr-1-0-0-colwise/ for more information.
+
+```{r q-3}
+d1 %>% 
+  select(conm, sale, oibdp, xrd) %>% 
+  group_by(conm) %>%
+  filter(conm %in% c("APPLE INC", "META PLATFORMS INC", "TESLA INC")) %>% 
+  summarize(
+    across(where(is.numeric)
+      , \(x) round(mean(x, na.rm = TRUE),1)
+    )
+  ) %>% 
+  as.data.frame()
+```
+
+# Q4
+
+Many advertising values are missing. The missing code in R is `NA`. We can get the total number of missing values for advertising quite easily by running the following function:
+
+```{r}
+sum(is.na(d1$xad))
+```
+
+In the finance literature, a common (but incorrect) practice is to assume that the missing advertising is 0. We will use this adjustment to `xad` and create a new variable `adv` and save it in a new object `d2`.
+
+The first six values of `d2` when `xad` is NA are as follows:
+
+```{r q-4}
+# Duplicate the xad column, rename as adv
+d2 = cbind(
+  d1,
+  "adv" = d1$xad
+)
+
+# Change adv values from NA to 0 (Replace-like approach)
+d2["adv"][is.na(d2["adv"])] <- 0 
+
+# Standard select, filter, display head
+d2 %>% 
+  select(conm, datadate, xad, adv) %>% 
+  filter(is.na(xad)) %>% 
+  as_tibble() %>% 
+  head() 
+```
+
+
+# Q5
+
+Using `d2`, create the following variables and print first 8 rows for NVidia and the new columns along with `conm` and `datadate`:
+
+1. Return on assets (`roa`) = `oibdp` / `at`
+2. Free cash flow (`fcf`) = `oancf` / `che`
+3. Strategic emphasis (`strat_emph`) = (`adv` - `xrd`) / `at`
+
+```{r q-5, message=FALSE}
+d2 %>% 
+  select(conm, datadate, oibdp, at, oancf, che, adv, xrd) %>% 
+  filter(conm == "NVIDIA CORP") %>% 
+  group_by(conm, datadate) %>% 
+  summarize(
+    roa = oibdp / at,
+    fcf = oancf / che,
+    strat_emph = (adv - xrd) / at
+  ) %>% 
+  slice_head(n=8)
+```
+
+# Q6
+
+You want to know how many profitable years each of the sample company experienced. For this, follow these steps:
+
+1. Create an indicator variable (dummy variable) called `profit_ind` such that when `oibdp > 0` this variable is 1. Otherwise it is 0.
+2. Group by company names
+3. Summarize `profit_ind` by taking its sum. Also, get the total number of observations for each company.
+
+```{r q-6}
+d2$profit_ind = 0 
+d2["profit_ind"][d2["oibdp"] > 0] <- 1 
+
+d2 %>% 
+  select(conm, profit_ind, fyear) %>% 
+  group_by(conm) %>% 
+  summarize(
+    profit_years = sum(profit_ind),
+    total_years = max(fyear) - min(fyear) + 1
+  )
+```
+
+```{r echo=FALSE}
+rm(d2)
+```
+
+# Q7
+
+Find the average annual stock returns of all the companies. Follow these steps:
+
+1. Arrange the data set by `conm` and `datadate`.
+2. Group by `conm`
+3. Calculate stock return `stk_ret` by taking the difference between `mkvalt` (Market value of equity) and its lag and then divide the difference by the lag of `mkvalt`
+4. Calculate stock return `stk_ret2` by taking the difference between `prcc_f` (Stock price at the end of the fiscal year) and its lag and then divide the difference by the lag of `prcc_f` 
+4. Summarize to get the mean of the stock returns `stk_ret_mean` and `stk_ret2_mean`.
+5. Display the average stock returns in percentage format.
+
+```{r q-7.1, warning=FALSE, message=FALSE}
+
+d2 <- d1 %>% 
+  select(conm, datadate, mkvalt, prcc_f) %>% 
+  arrange(conm, datadate) %>% 
+  group_by(conm) %>% 
+  summarize(
+      stk_ret  = (mkvalt - lag(mkvalt)) / lag(mkvalt)
+      ,stk_ret2 = (prcc_f - lag(prcc_f)) / lag(prcc_f)
+  )
+```
+
+```{r q-7.2}
+d2 %>% 
+  select(conm, stk_ret, stk_ret2) %>% 
+  group_by(conm) %>% 
+  summarize(
+    across(c(stk_ret, stk_ret2)
+        , list(mean = \(x) scales::percent(mean(x, na.rm = TRUE), accuracy = 0.01))
+        , .names = "{.col}_{.fn}"
+    )
+  )
+
+```
+
+
+___Not graded: The average stock returns calculated using these two measures are very different. Which of these is correct?___\
+I would go with the stock price at the end of the fiscal year (`prcc_f`) because its the difference of the stock price year over year, where the market value of equity (`mkvalt`) is the stock price times number of shares and is then being taken year over year, which is different than a pure annual stock return average.
+
+```{r echo=FALSE}
+rm(d2)
+```
+
+# Q8
+
+In many statistical and machine learning applications, we use scaled variables instead of the original variables. A scaled variable is typically created by subtracting the sample mean of the variable from the variable and dividing it by its standard deviation. There is a `scale()` function in base R which can directly do it. 
+
+You want to create a scaled variable for `sale` but separately for each company. Therefore, you can't use the mean and standard deviation of `sale` for the entire sample. Instead, you have to calculate these statistics for each company separately and then create a scaled variable. Follow these steps:
+
+1. Group by `conm`
+2. Summarize `sale` to get the mean (`sale_mean`) and the standard deviation (`sale_sd`)
+3. Assign this dataframe to `d2_sum`
+4. Join `d2` and `d2_sum` by `conm`
+5. Create `sale_scaled` by subtracting `sale_mean` from `sale` and dividing this difference by `sale_sd`
+
+Print the first 10 rows for Tesla with `conm`, `sale`, `sale_scaled`, `sale_mean`, and `sale_sd` using `as.data.frame()`
+
+```{r}
+d2_sum <- d1 %>% 
+  select(conm, sale) %>% 
+  group_by(conm) %>% 
+  summarize(
+    across(
+      c(sale),
+      list(mean = \(x) mean(x), sd = \(y) sd(y)),
+      .names = "{.col}_{.fn}"
+    )
+  )
+
+d2 <- left_join(d1 %>% select(conm, sale), d2_sum, by=c("conm"))
+
+d2 %>% 
+  select(conm, sale, sale_mean, sale_sd) %>% 
+  group_by(conm) %>% 
+  mutate(
+    sale_scaled = (sale - sale_mean ) / sale_sd
+  ) %>% 
+  filter(conm == "TESLA INC") %>% 
+  select(conm, sale, sale_scaled, sale_mean, sale_sd) %>% 
+  as.data.frame() %>% 
+  slice_head(n=10)
+```
