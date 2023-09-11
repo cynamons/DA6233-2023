@@ -3238,12 +3238,12 @@ This homework consists of 8 questions. Q1 carries 1 point. Q2 through Q8 carry t
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(conm) <span class="sc">%&gt;%</span> </span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
 <span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">profit_years =</span> <span class="fu">sum</span>(profit_ind),</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_years =</span> <span class="fu">max</span>(fyear) <span class="sc">-</span> <span class="fu">min</span>(fyear) <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_years =</span> <span class="fu">n</span>()</span>
 <span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 7 × 3
   conm               profit_years total_years
-  &lt;chr&gt;                     &lt;dbl&gt;       &lt;dbl&gt;
+  &lt;chr&gt;                     &lt;dbl&gt;       &lt;int&gt;
 1 ALPHABET INC                 13          13
 2 AMAZON.COM INC               13          13
 3 APPLE INC                    13          13

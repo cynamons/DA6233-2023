@@ -155,7 +155,7 @@ d2 %>%
   group_by(conm) %>% 
   summarize(
     profit_years = sum(profit_ind),
-    total_years = max(fyear) - min(fyear) + 1
+    total_years = n()
   )
 ```
 
