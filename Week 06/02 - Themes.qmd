@@ -126,6 +126,17 @@ base + theme(panel.grid.minor = element_line(color = "blue",
 
 ```
 
+```{r}
+#| echo = TRUE
+base + theme(panel.grid.minor = element_line(color = "blue", 
+                                             linewidth = 2, 
+                                             linetype = "dashed"),
+             panel.grid.major = element_line(color = "black", 
+                                             linewidth = 2, 
+                                             linetype = "dashed")) 
+
+```
+
 For many professional applications it is important to set the aspect ratio of the panel so that the graph looks the same no matter where you print it. Flexible aspect ratio may lead to unnecessary stretching or compressing of axes.
 
 ```{r}
