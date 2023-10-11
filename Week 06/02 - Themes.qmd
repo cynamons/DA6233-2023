@@ -257,4 +257,17 @@ ggsave("plot01_2023-09-26.png", plot = p1,
 
 ```
 
+```{r eval=FALSE}
+install.packages("ggthemes")
+```
+
+
+```{r}
+library(ggthemes)
+
+ggplot(mpg, aes(x = cty, y = hwy)) +
+  geom_point() + 
+  theme_fivethirtyeight()
+
+```
 

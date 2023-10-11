@@ -1,0 +1,246 @@
+---
+title: "Homework 2"
+subtitle: "ggplot2 rocks!"
+author: "Samuel Cynamon | yjj265"
+date: "2023-10-11"
+format:
+  html: 
+    theme: none
+    embed-resources: TRUE
+    toc: TRUE
+    toc-location: left
+    toc_depth: 4
+---
+
+
+```{r include=FALSE}
+cleanrmd::use_cleanrmd(name = "superstylin")
+```
+
+```{r include=FALSE}
+pacman::p_load(tidyverse, lubridate, wesanderson, viridis, ggimage, showtext, ggtext, jpeg, png)
+theme_set(theme_minimal())
+
+my_wd = "C:/Users/samuel.cynamon/OneDrive - LinQuest Corporation/Documents/MSDA/2023/DA6233/DA6233-2023"
+setwd(my_wd) # set your own path
+```
+
+Homework 2 is all about using `ggplot2`. You will use `tech_stocks_csv.zip` data set you have used previously in Homework 1. You are aware of its structure and the meanings of the variables. Recall that you explored it in Homework 1. Knowing your data set well before you start exploring it is absolutely essential for data science.
+
+```{r}
+d1 = read_csv(here::here("Data","svcckww1jskrstnz.csv"), show_col_types = FALSE) %>% 
+  filter(sale > 0) %>% 
+  mutate(conm = stringr::str_to_title(conm), # Converts the string to title case
+         datadate = lubridate::ymd(datadate)) # Convert datadate into a date variable
+```
+
+<p style="border:3px; border-style:solid; border-color:#b50000; padding: 1em;">
+This homework consists of 7 questions. ___Your objective is to reproduce the output shown in the HTML file for Q1 through Q7.___
+</p>
+
+### Q1 (3 Points)
+Create a bar graph of the ___average sales___ of each company using the variable `sale` such that the bars are arranged in an ascending order. I’m giving you the code to prepare the data set to make the plot:
+
+```{r}
+d1_1 = d1 %>%
+  group_by(conm) %>% 
+  summarize(avg_sale = mean(sale), .groups = "drop")
+```
+
+d1_1 has the appropriate variable you need to create the bar plot. Notice that I have used `.groups = "drop"` inside `summarize()`. This makes sure that the data you will use in `ggplot()` is not grouped.
+
+```{r q1-answer}
+q1 <- d1_1 %>% 
+  ggplot(aes(x = avg_sale, y = reorder(conm, avg_sale))) +
+  geom_col()+
+  scale_x_continuous(labels = scales::label_dollar(prefix = "$")) +
+  labs(x = "Average Sale in $ Millions", y = "Company")
+
+q1
+```
+
+### Q2 (1 Point)
+Modify the plot in Q1 to add text labels to the bars. Note that I have used `hjust = -0.2` and `size = 3` for the text labels.
+
+```{r q2-answer}
+q1 +
+  geom_text(aes(label = round(avg_sale/1000,0)), hjust = -0.2, size = 3,  color = "black")
+```
+
+```{r include=FALSE}
+rm(d1_1)
+```
+
+### Q3 (2 Points)
+
+In finance, it is widely believed that companies with more R&D prefer lower debt. Let’s explore whether we can observe this relationship in our data. Using `mutate`, first create these two variables. (I am giving you the exact formulas to put inside `mutate()`.)\
+\
+debt_ratio = (dlc + replace_na(dltt, 0)) / at\
+\
+rnd_int = xrd / sale\
+\
+Next, create a scatter plot with `debt_ratio` on the X axis and `rnd_int` on the Y axis.\
+
+```{r q3-answer, warning=FALSE, message=FALSE}
+d1 %>% 
+  select(dlc, dltt, at, xrd, sale) %>% 
+  mutate(
+    debt_ratio = (dlc + replace_na(dltt, 0)) / at,
+    rnd_int = xrd / sale
+  ) %>% 
+  ggplot()+
+  geom_point(mapping = aes(x = debt_ratio, y = rnd_int),shape = 21, size = 3, color = "black", fill = "grey59") +
+  geom_smooth(aes(x = debt_ratio, y = rnd_int), method = "lm") +
+  labs(x = "Debt Ratio", y = "R&D to Sales Ratio")
+```
+
+### Q4 (2 Points)
+Profit margin is simply profits divided by sales. Compare profit margins of the following six companies - Apple, Tesla, Meta, Microsoft, Amazon, and Nvidia - over the full sample period. Use `fyear` on the X axis. `fyear` is the fiscal year.\
+\
+Here I give you the code to get the data set in required form. First, note that I am using the variable tic to filter certain “ticker symbols”, which are the IDs used by stock markets for companies. I am doing this simply to save on typing rather than writing out the entire company names! You could also use gvkey as it is a company identifier. But `gvkey` are not intuitive. Ticker symbols can help you guess (in most cases) what a stock is.\
+\
+As you are using `fyear` for plotting a time series, we have to make sure that `fyear` is indeed interpreted by `ggplot2` as a time variable. However, it’s not that straightforward. This is because fiscal years, unlike calendar years, don’t all end exactly on the same day! I know it sounds insane but that’s true. Think about this like school years in different school districts. If the fiscal year ends in different months, how can we create a valid comparison among these companies? Indeed, the variable `datadate`, which is the fiscal year end date, is not the same for all the companies for any given fiscal year. Luckily we are dealing with annual data and so we can artificially choose to pick a common year end date for the sake of making the plot. ___Note that this is not the right thing to do for statistical or financial analysis!___ This simply helps us in making a meaningful plot. As such, I am setting the year end date for all the fiscal years to December 31st. Below, `paste` function will create strings in “yyyy-mm-dd” format with mm being 12 and dd being 31 as show below. Next, `as.Date()` function from base R will convert it into an actual date format!\
+\
+```{r}
+d1_4 <- d1 %>% 
+  filter(tic %in% c("AAPL", "TSLA", "META", "MSFT", "AMZN", "NVDA")) %>% 
+  mutate(pr_margin = oibdp / sale,
+         fyear = as.Date(paste(fyear, "12", "31", sep = "-")))
+```
+
+Now use d1_4 to create the following plot.\
+
+```{r q4-answer, message=FALSE, warning=FALSE}
+temp <- data.frame(seq(as.Date("2008/1/1"), as.Date("2026/1/1"), "years"))
+colnames(temp) <- c('zyear')
+temp$z <- 0
+
+d1_4 %>% 
+  ggplot() +
+  geom_line(aes(x = fyear, y = pr_margin)) +
+  geom_line(temp, mapping = aes(x = zyear, y = z), color='red') +
+  facet_wrap(~conm) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  scale_x_date(labels = scales::label_date_short(format = c("%Y")),
+                     limits = c(as.Date('2010-01-01'),as.Date('2024-01-01'))) +
+  labs(x = "Fiscal Year", y = "Profit Margin") +
+  theme(
+    strip.text = element_text( hjust = 0 )
+  )
+```
+
+```{r include=FALSE}
+rm(d1_4)
+rm(temp)
+```
+
+
+### Q5 (3 Points)
+Tesla is the largest car manufacturer in the world by market value. But what about sales? Let’s compare sales and market value over the 10/11 years period in our sample.\
+\
+First create a data frame that you can use to create a plot where you can compare sales and market value in the same plot. This requires rearranging the data into “long” form, where we will stack Tesla’s sales and market value on top of each other.\
+\
+Here is the code to create such a data set. Please read it carefully to understand all the steps.\
+```{r}
+d1_5 <- d1 %>% 
+  filter(conm == "Tesla Inc") %>% 
+  mutate(mkt_val = prcc_f * cshpri) %>% # Create market value
+  select(conm, datadate, mkt_val, sale) %>% 
+  pivot_longer(cols = c(mkt_val, sale), 
+               names_to = "fin_var", 
+               values_to = "fin_value")
+```
+\
+Print first few rows of d1_5 ___in the console___ by using `head()` function to understand what this data set is. Don’t output it inside the homework file.\
+\
+Now using d1_5, create the following plot using `datadate` on the X axis:\
+```{r q5-answer}
+d1_5 %>% 
+  ggplot(aes(x = datadate, y = fin_value)) +
+  geom_line(aes(color=fin_var), size = 1) +
+  scale_y_continuous(labels = scales::label_dollar(prefix = "$")) +
+  labs(title = "__Tesla's Sales and Market Value (Million USD)__", 
+       x = "Date", y = "", color="Financial Variable") +
+  theme( plot.title = element_markdown(hjust=0.5),
+         legend.position = "top")
+```
+
+```{r include=FALSE}
+rm(d1_5)
+```
+
+### Q6 (2 Points)
+When the time variable is discrete, we can also show a time trend using a bar plot. This is quite common in practice. `fyear` is an integer so we can use it as a discrete variable and create a bar plot of profits for Facebook and Nvidia as shown below. Manually change the `fill` of bars using the following colors: c("`#5cc9f5`", "`#b131a2`")
+
+```{r q6-answer}
+mycolors <- c("#5cc9f5", "#b131a2")
+
+d1 %>% 
+  select(conm, tic, fyear, oibdp) %>% 
+  filter(tic %in% c("META", "NVDA")) %>% 
+  ggplot(aes(x=fyear, y=oibdp, fill=conm)) +
+  geom_col()+
+  scale_x_continuous(breaks = c(2009:2022),
+                     minor_breaks = NULL,
+                     expand = c(0,0)) +
+  labs(x = "Fiscal Year", y = "Profits in $ million", fill="") +
+  facet_wrap(~conm, nrow = 2) +
+  scale_fill_manual(values = mycolors) +
+  theme(axis.ticks.length.y = NULL,
+        strip.text = element_text( hjust = 0, size = 10),
+        legend.position = "top")
+```
+
+### Q7 (2 Points)
+Use Mark Zuckerberg’s cutout to create the following visualization. You are free to position the picture anywhere and in any size you want. Just don’t cover the bars.
+
+```{r q7-answer}
+mycolors <- c("#5cc9f5", "#b131a2")
+
+d1 %>% 
+  select(conm, tic, fyear, oibdp) %>% 
+  filter(tic %in% c("META")) %>% 
+  ggplot(aes(x=fyear, y=oibdp, fill=conm)) +
+  geom_col()+
+  scale_x_continuous(breaks = c(2010:2022),
+                     minor_breaks = NULL,
+                     expand = c(0,0)) +
+  labs(x = "Fiscal Year", y = "Profits in $ million", fill="") +
+  scale_fill_manual(values = mycolors) +
+  theme(axis.ticks.length.y = NULL,
+        legend.position = "none") +
+  annotation_raster(readPNG(here::here("HW 2","mark-zuckerberg-celebrity-mask.png")),
+                    xmin = 2013, xmax = 2015, ymin = 23000, ymax = 35000, interpolate = T) 
+```
+
+### Fun plot! (Not graded)
+You don’t have to actually make this plot but it’s fun to make it! I have shared the cutouts of Musk and Cook in case you want to give it a shot.
+
+```{r qE-answer, message=FALSE, warning=FALSE}
+mycolors <- c("black", "#5cc9f5", "red")
+
+d1 %>% 
+  filter(tic %in% c("AAPL", "TSLA", "META")) %>% 
+  mutate(mkt_val = prcc_f * cshpri) %>% 
+  select(conm, datadate, mkt_val) %>% 
+    ggplot(aes(x = datadate, y = mkt_val)) +
+    geom_line(aes(color=conm), size = 2) +
+    scale_y_continuous(labels = scales::label_dollar(prefix = "$")) +
+    scale_x_date(labels = scales::label_date_short(format = c("%Y")),
+                 breaks = c(as.Date('2015-01-01'),as.Date('2020-01-01')),
+                 limits = c(as.Date('2010-01-01'),as.Date('2024-01-01')),
+                 expand = c(0,100))+
+    labs(x="", y = "Market Value in $million") +
+    scale_color_manual(values = mycolors) +
+    theme(legend.position = "none") +
+    annotation_raster(readPNG(here::here("HW 2","mark-zuckerberg-celebrity-mask.png")),
+                      xmin = as.Date('2023-03-01'), xmax = as.Date('2024-03-01'), ymin = 150000, ymax = 400000, interpolate = T) +
+    annotation_raster(readPNG(here::here("HW 2","elon-musk-smile-celebrity-mask.png")),
+                      xmin = as.Date('2023-03-01'), xmax = as.Date('2024-03-01'), ymin = 400000, ymax = 650000, interpolate = T) +
+    annotation_raster(readJPEG(here::here("HW 2","tim_cook_headshot_glasses.jpg")),
+                      xmin = as.Date('2023-03-01'), xmax = as.Date('2024-03-01'), ymin = 2100000, ymax = 2350000, interpolate = T) 
+```
+
+
+
+

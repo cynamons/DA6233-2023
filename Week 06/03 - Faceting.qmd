@@ -10,10 +10,22 @@ output: html_document
 In this tutorial we will learn Faceting in `ggplot2`
 
 ```{r}
-#| label = "setup"
+#| message: false
+
 library(ggplot2)
 library(dplyr)
 ```
+
+```{r}
+#| message: false
+mpg %>% filter(class != "2seater") %>% 
+ggplot(aes(x=displ, y=hwy, color = class)) +
+  geom_point() +
+  geom_smooth(method = "lm", se=FALSE) +
+  facet_wrap(~class)
+  #facet_wrap(~class, scales = "free")
+```
+
 
 We will use only a subset of the `mpg` data set as used in chapter 7 because it's easy for the demo. We will remove cars with 5 cylinders (only 4 observations) and class 2seater (5 observations). We will also remove cars with rear wheel drive (25 observations)
 
